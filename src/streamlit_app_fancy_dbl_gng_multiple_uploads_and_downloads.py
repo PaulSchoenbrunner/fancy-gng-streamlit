@@ -148,7 +148,7 @@ if uploaded_files is not None:
 
             plt.tight_layout()
             st.pyplot(fig)
-
+            st.divider()
         if aug_output_images and len(aug_output_images) == constants.AUG_COUNT * len(uploaded_files):
             zip_buffer = io.BytesIO()
             name_index = 0
@@ -159,14 +159,11 @@ if uploaded_files is not None:
                         print(name_index)
                         name_index += 1
                     base_name = uploaded_files[name_index].name.rsplit('.', 1)[0]
-                    # Neuen, eindeutigen Namen setzen
                     file_name = f"{base_name}_aug_{i % constants.AUG_COUNT}" + constants.FILE_TYPE 
                     buf = io.BytesIO()
                     img.save(buf, format="JPEG")
                     zipf.writestr(file_name, buf.getvalue())
                   
-
-            # Download-Button für das ZIP
             st.download_button(
                 label="Downlaod augmented images as a zip file" ,
                 data=zip_buffer.getvalue(),
