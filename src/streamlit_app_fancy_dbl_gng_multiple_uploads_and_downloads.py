@@ -62,12 +62,13 @@ def generate_augmentations(image_data, size):
     """Führt den gesamten DBL-GNG + Clustering + Augmentierungsprozess durch."""
     gng = dbl_gng.DBL_GNG(3, constants.MAX_NODES)
     gng.initializeDistributedNode(image_data, constants.SARTING_NODES)
-
-    for i in trange(constants.EPOCH, desc="Training GNG"):
+    bar = trange(constants.EPOCH)
+    for i in bar:
         gng.resetBatch()
         gng.batchLearning(image_data)
         gng.updateNetwork()
         gng.addNewNode(gng)
+        bar.set_description(f"Epoch {i + 1} Knotenanzahl: {len(gng.W)}")  # Fortschrittsanzeige
 
     gng.cutEdge()
     gng.finalNodeDatumMap(image_data)
@@ -82,10 +83,15 @@ def generate_augmentations(image_data, size):
 
     aug_images = []
     for _ in range(constants.AUG_COUNT):
-        aug_data = color_pca.modify_clusters(image_data, pixel_cluster_map, cluster_count, [size], 0)
-        aug_data = (aug_data * 255).astype(np.uint8).reshape((size[1], size[0], 3))
-        aug_images.append(Image.fromarray(aug_data))
-    
+        aug_data = color_pca.modify_clusters(data_array, pixel_cluster_map, cluster_count, [image.size], 0)
+        aug_data = (aug_data * 255).astype(np.uint8)  # Umwandlung in uint8
+
+        # Rückwandlung in die ursprüngliche Bildform: Höhe x Breite x 3
+        aug_data = aug_data.reshape((image.size[1], image.size[0], 3))
+
+        # Erstellen des augmentierten Bildes
+        aug_image = Image.fromarray(aug_data)
+        aug_images.append(aug_image)
     return aug_images, cluster_count
 
 def create_plot(all_images):
