@@ -21,7 +21,17 @@ if "fig" not in st.session_state:
     st.session_state.fig = {}
 if "fig_png" not in st.session_state:
     st.session_state.fig_png = {}
+if "done" not in st.session_state:
+    st.session_state.done = False
 
+def reset_session():
+    st.session_state.clear()
+
+def reset_for_new_run():
+    st.session_state.image_results = {}
+    st.session_state.fig = {}
+    st.session_state.fig_png = {}
+    
 # --- Streamlit UI ---
 st.title("🧠 DBL-GNG Image Augmentation")
 st.write("Lade ein oder mehrere Bilder hoch oder nimm eines mit der Kamera auf.")
@@ -34,7 +44,8 @@ if input_option == "Datei-Upload":
     uploaded_files = st.file_uploader(
         "Bilder auswählen", 
         type=["jpg", "jpeg", "png"], 
-        accept_multiple_files=True
+        accept_multiple_files=True,
+        on_change= reset_session
     )
 elif input_option == "Kamera":
     uploaded_files = st.camera_input("Bild aufnehmen")
@@ -42,9 +53,11 @@ elif input_option == "Kamera":
 if uploaded_files:
     st.session_state.uploaded_files = uploaded_files
 
+start_augmentation = st.button("🚀 Starte Augmentierung")
 
-# --- Caching für teure Berechnung ---
-@st.cache_data(show_spinner=False)
+if start_augmentation and st.session_state.done:
+    reset_for_new_run()
+
 def generate_augmentations(image_data, size):
     """Führt den gesamten DBL-GNG + Clustering + Augmentierungsprozess durch."""
     gng = dbl_gng.DBL_GNG(3, constants.MAX_NODES)
@@ -75,7 +88,6 @@ def generate_augmentations(image_data, size):
     
     return aug_images, cluster_count
 
-@st.cache_resource
 def create_plot(all_images):
     fig, axs = plt.subplots(2, len(all_images), figsize=(15, 6))
     for idx, img in enumerate(all_images):
@@ -104,7 +116,7 @@ def fig_to_png(fig):
     return buf
 
 # --- Hauptverarbeitung ---
-if st.session_state.uploaded_files:
+if (start_augmentation or st.session_state.done) and st.session_state.uploaded_files:
     for uploaded_file in st.session_state.uploaded_files:
         filename = uploaded_file.name
 
@@ -139,6 +151,7 @@ if st.session_state.uploaded_files:
             st.session_state.fig_png[filename] = png_buf.getvalue()
        
         st.image(st.session_state.fig_png[filename])
+    st.session_state.done = True
         
 
 
@@ -164,7 +177,3 @@ if st.session_state.image_results:
     )
 
 
-# --- Reset ---
-if st.button("🔄 Reset"):
-    st.session_state.clear()
-    st.experimental_rerun()
