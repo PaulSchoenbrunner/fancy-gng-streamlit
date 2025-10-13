@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 import io, zipfile
 import datetime
 
-
+FANCYGNG_STR = "FancyGNG"
+FANCYPCA_STR = "FancyPCA"
+COLORJITTER_STR = "Color-Jitter"
 
 def init_session():
     # Session-States initialisieren
@@ -44,6 +46,14 @@ st.write("Lade ein oder mehrere Bilder hoch oder nimm eines mit der Kamera auf."
 
 
 # Eingabeoption
+
+aug_option = st.selectbox(
+    "Wähle das Augmentationsverfahren:",
+    [FANCYGNG_STR, FANCYPCA_STR, COLORJITTER_STR],
+    index=0
+)
+st.write(f"Gewähltes Verfahren: {aug_option}")
+
 input_option = st.radio("Bildquelle auswählen:", ["Datei-Upload", "Kamera"])
 
 if input_option == "Datei-Upload":
@@ -82,7 +92,25 @@ start_augmentation = st.button("🚀 Starte Augmentierung")
 if start_augmentation and st.session_state.done:
     reset_for_new_run()
 
-def generate_augmentations(image_data):
+
+def fancy_gng():
+    aug_images, cluster_count = generate_fancy_gng_augmentations(data_array)
+    st.session_state.image_results[filename] = {
+                   "original": image,
+                   "aug_images": aug_images,
+                   "cluster_count": cluster_count,
+                   "data_shape": data_array.shape,
+    }
+
+def show_fancy_gng_info():
+    st.divider()
+    st.subheader(f"📸 {filename}")
+    st.write(f"**Bildgröße:** {info['original'].size}")
+    st.write(f"**Bildarray-Form:** {info['data_shape']}")
+    st.write(f"**Anzahl der Cluster:** {info['cluster_count']}")
+
+
+def generate_fancy_gng_augmentations(image_data):
     """Führt den gesamten DBL-GNG + Clustering + Augmentierungsprozess durch."""
     gng = dbl_gng.DBL_GNG(3, constants.MAX_NODES)
     gng.initializeDistributedNode(image_data, constants.SARTING_NODES)
@@ -145,6 +173,12 @@ def fig_to_png(fig):
     buf.seek(0)
     return buf
 
+
+
+
+
+
+
 # Hauptverarbeitung
 if (start_augmentation or st.session_state.done) and st.session_state.uploaded_files:
     for uploaded_file in st.session_state.uploaded_files:
@@ -157,21 +191,14 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
                 image_array = np.asarray(image)
                 data_array = image_array.reshape(-1, 3) / constants.MAX_COLOR_VALUE
 
-                aug_images, cluster_count = generate_augmentations(data_array)
-                st.session_state.image_results[filename] = {
-                    "original": image,
-                    "aug_images": aug_images,
-                    "cluster_count": cluster_count,
-                    "data_shape": data_array.shape,
-                }
+                if aug_option == FANCYGNG_STR:
+                    fancy_gng()
 
         # Anzeige
         info = st.session_state.image_results[filename]
-        st.divider()
-        st.subheader(f"📸 {filename}")
-        st.write(f"**Bildgröße:** {info['original'].size}")
-        st.write(f"**Bildarray-Form:** {info['data_shape']}")
-        st.write(f"**Anzahl der Cluster:** {info['cluster_count']}")
+        if aug_option == FANCYGNG_STR:
+            show_fancy_gng_info()
+            
 
         # Punktwolke & Augmentierungen anzeigen
         if filename not in st.session_state.fig:
