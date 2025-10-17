@@ -35,6 +35,8 @@ def init_session():
         st.session_state.last_picture = None
     if "last_aug" not in st.session_state:
         st.session_state.last_aug = None
+    if "last_aug_info" not in st.session_state:
+        st.session_state.last_aug_info = None
 
 init_session()
 
@@ -261,8 +263,8 @@ def keep_dependent_ui_element_at_random_button(dependency, dependency_func_map :
             return func(*args)  
 
 
-show_fancy_pca_info_bool = (aug_option == FANCYPCA_STR and start_augmentation) or (aug_option == FANCYGNG_STR and st.session_state.last_aug == FANCYPCA_STR and not start_augmentation)
-show_fancy_gng_info_bool = (aug_option == FANCYGNG_STR and start_augmentation) or (aug_option == FANCYPCA_STR and st.session_state.last_aug == FANCYGNG_STR and not start_augmentation)
+#show_fancy_pca_info_bool = (aug_option == FANCYPCA_STR and start_augmentation) or (aug_option == FANCYGNG_STR and st.session_state.last_aug == FANCYPCA_STR and not start_augmentation)
+#show_fancy_gng_info_bool = (aug_option == FANCYGNG_STR and start_augmentation) or (aug_option == FANCYPCA_STR and st.session_state.last_aug == FANCYGNG_STR and not start_augmentation)
 
 
 
@@ -292,17 +294,17 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
         # Anzeige
         info = st.session_state.image_results[filename]
        
-        if show_fancy_gng_info_bool:
-            show_fancy_gng_info(filename, info)
+        if filename not in st.session_state.fig:
+            if aug_option == FANCYGNG_STR:
+                st.session_state.last_aug_info = show_fancy_gng_info
            
         
-        elif show_fancy_pca_info_bool:
-            show_fancy_pca_info(filename, info)
+            elif aug_option == FANCYPCA_STR:
+                st.session_state.last_aug_info = show_fancy_pca_info
         
-        else:
-            keep_dependent_ui_element_at_random_button(st.session_state.last_aug, {FANCYPCA_STR: [show_fancy_pca_info, filename, info], 
-                                                                                FANCYGNG_STR: [show_fancy_gng_info, filename, info]} ) 
+        st.session_state.last_aug_info(filename, info)
         
+    
        
         # Punktwolke & Augmentierungen generieren
         if show_point_cloud:
