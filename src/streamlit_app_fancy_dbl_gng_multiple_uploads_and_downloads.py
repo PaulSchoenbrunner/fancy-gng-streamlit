@@ -6,6 +6,7 @@ import clustering
 import color_pca
 from tqdm import trange
 from PIL import Image
+from torchvision import transforms
 import matplotlib.pyplot as plt
 import io, zipfile
 import datetime
@@ -207,6 +208,41 @@ def generate_fancy_gng_augmentations(image_data):
 
 
 
+#-----------------------------------Color-Jitter------------------------------------------
+def color_jitter(image_data, original_image):
+    aug_images = generate_color_jitter_augmentations(original_image)
+    st.session_state.image_results[filename] = {
+        "original": original_image,
+        "aug_images": aug_images,
+        "data_shape": image_data.shape,
+        "parameter": {"Brightness" : constants.BRIGHTNESS,
+                      "Contrast" : constants.CONTRAST,
+                      "Saturation" : constants.SATURATION,
+                      "Hue" : constants.HUE}
+    }
+
+
+def generate_color_jitter_augmentations(image):
+    transform = transforms.ColorJitter(
+        brightness=constants.BRIGHTNESS, contrast=constants.CONTRAST, saturation=constants.SATURATION, hue=constants.HUE
+    )
+    aug_images = []
+    for _ in range(constants.AUG_COUNT):
+        img = transform(image)
+        aug_images.append(img)
+    return aug_images
+
+
+def show_color_jitter_info(filename, info):
+    st.divider()
+    st.subheader(f"📸 {filename}")
+    st.write(f"**Bildgröße:** {info['original'].size}")
+    st.write(f"**Bildarray-Form:** {info['data_shape']}")
+    st.write(f"**Parameter:** {info['parameter']}")
+
+
+
+
 
 #-----------------------------Plotting----------------------------------------------
 def create_plot(all_images):
@@ -289,6 +325,11 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
                 
                 elif aug_option == FANCYPCA_STR:
                     fancy_pca(data_array, image)
+
+                elif aug_option == COLORJITTER_STR:
+                    color_jitter(data_array, image)
+
+                
                 
 
         # Anzeige
@@ -301,6 +342,9 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
         
             elif aug_option == FANCYPCA_STR:
                 st.session_state.last_aug_info = show_fancy_pca_info
+
+            elif aug_option == COLORJITTER_STR:
+                    st.session_state.last_aug_info = show_color_jitter_info
         
         st.session_state.last_aug_info(filename, info)
         
