@@ -26,8 +26,6 @@ def init_session():
         st.session_state.uploaded_files = None
     if "image_results" not in st.session_state:
         st.session_state.image_results = {}  # {filename: {"original": Image, "aug_images": [...], "cluster_count": int, "data_shape": tuple}}
-    if "fig" not in st.session_state:
-        st.session_state.fig = {}
     if "fig_png" not in st.session_state:
         st.session_state.fig_png = {}
     if "done" not in st.session_state:
@@ -47,7 +45,6 @@ def reset_session():
 
 def reset_for_new_run():
     st.session_state.image_results = {}
-    st.session_state.fig = {}
     st.session_state.fig_png = {}
 
 
@@ -100,6 +97,12 @@ elif input_option == "Kamera":
 #Punktwolke anzeigen
 show_point_cloud = st.checkbox("Zeige die Punktwolke")
 
+#Punktwolke anzeigen
+show_gray_scale = st.checkbox("Generiere zusätzlich eine gray scale Version")
+
+option_buttons = []
+option_buttons.append(show_point_cloud)
+option_buttons.append(show_gray_scale)
 #Augmentation starten
 start_augmentation = st.button("🚀 Starte Augmentierung")
 if start_augmentation and st.session_state.done:
@@ -245,36 +248,43 @@ def show_color_jitter_info(filename, info):
 
 
 #-----------------------------Plotting----------------------------------------------
-def create_plot(all_images):
-    fig, axs = plt.subplots(2, len(all_images), figsize=(15, 6))
+def create_point_cloud(all_images, axs, row_idx = 0):
     for idx, img in enumerate(all_images):
-        rgb_image = img.convert("RGB")
-        width, height = img.size
-        points = np.array([
-            (r, g, b, r, g, b)
-            for x in range(width)
-            for y in range(height)
-            for (r, g, b) in [rgb_image.getpixel((x, y))]
-        ])
-        axs[0, idx].scatter(points[:, 1], points[:, 2], c=points[:, 3:6] / 255, s=1)
-        axs[0, idx].set_xlim(0, 255)
-        axs[0, idx].set_ylim(0, 255)
-        axs[0, idx].set_aspect('equal', 'box')
-        axs[0, idx].set_title("Original" if idx == 0 else f"Aug {idx}")
-        axs[1, idx].imshow(img)
-        axs[1, idx].axis("off")
-    fig.tight_layout()
-    return fig
+        ax = get_fig_ax(axs, row_idx, idx)
+        if len(ax.images) == 0 and len(ax.collections) == 0:  # nur wenn Achse leer
+            rgb_image = img.convert("RGB")
+            width, height = img.size
+            points = np.array([
+                (r, g, b, r, g, b)
+                for x in range(width)
+                for y in range(height)
+                for (r, g, b) in [rgb_image.getpixel((x, y))]
+            ])
+            ax.scatter(points[:, 1], points[:, 2], c=points[:, 3:6] / 255, s=1)
+            ax.set_xlim(0, 255)
+            ax.set_ylim(0, 255)
+            ax.set_aspect('equal', 'box')
+            #ax.set_title("Original" if idx == 0 else f"Aug {idx}")
+        
+
+def create_gray_images(all_images, axs, row_idx = 0):
+    grayscale_transform = transforms.Grayscale()
+    for idx, img in enumerate(all_images):
+        ax = get_fig_ax(axs, row_idx, idx)
+        if len(ax.images) == 0 and len(ax.collections) == 0:
+            gray = grayscale_transform(img)
+            ax.imshow(gray, cmap="gray")
+            ax.axis("off")
+            #ax.set_title("Original" if idx == 0 else f"Gray Aug {idx}")
 
 
-def cerate_simple_plot(all_images):
-    fig, axs = plt.subplots(1, len(all_images), figsize=(15, 6))
+def create_main_plot(all_images, axs, row_idx = 0):
     for idx, img in enumerate(all_images):
-        axs[idx].set_title("Original" if idx == 0 else f"Aug {idx}")
-        axs[idx].imshow(img)
-        axs[idx].axis("off")
-    fig.tight_layout()
-    return fig    
+        ax = get_fig_ax(axs, row_idx, idx)
+        if len(ax.images) == 0 and len(ax.collections) == 0:  
+            ax.imshow(img)
+            ax.axis("off")
+            ax.set_title("Original" if idx == 0 else f"Aug {idx}")
 
 
 def fig_to_png(fig):
@@ -298,6 +308,11 @@ def keep_dependent_ui_element_at_random_button(dependency, dependency_func_map :
             args = entry[1:]
             return func(*args)  
 
+def get_fig_ax(axs, row_index, idx):
+    if axs.ndim == 1:
+        return axs[idx]
+    else:
+        return axs[row_index, idx]
 
 #show_fancy_pca_info_bool = (aug_option == FANCYPCA_STR and start_augmentation) or (aug_option == FANCYGNG_STR and st.session_state.last_aug == FANCYPCA_STR and not start_augmentation)
 #show_fancy_gng_info_bool = (aug_option == FANCYGNG_STR and start_augmentation) or (aug_option == FANCYPCA_STR and st.session_state.last_aug == FANCYGNG_STR and not start_augmentation)
@@ -332,38 +347,53 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
                 
                 
 
-        # Anzeige
+        # Info Anzeige
         info = st.session_state.image_results[filename]
        
-        if filename not in st.session_state.fig:
+        if filename not in st.session_state.fig_png:
             if aug_option == FANCYGNG_STR:
                 st.session_state.last_aug_info = show_fancy_gng_info
            
-        
             elif aug_option == FANCYPCA_STR:
                 st.session_state.last_aug_info = show_fancy_pca_info
 
             elif aug_option == COLORJITTER_STR:
-                    st.session_state.last_aug_info = show_color_jitter_info
+                st.session_state.last_aug_info = show_color_jitter_info
         
         st.session_state.last_aug_info(filename, info)
         
-    
-       
-        # Punktwolke & Augmentierungen generieren
-        if show_point_cloud:
-            if filename not in st.session_state.fig:
-                with st.spinner(f"Augementation von {filename} abgeschlossen...Starte Visualisierung der Punktwolke"):
-                    st.session_state.fig[filename] = create_plot([info["original"]] + info["aug_images"])
-                    png_buf = fig_to_png(st.session_state.fig[filename])
-                    st.session_state.fig_png[filename] = png_buf.getvalue()
+
+        #Grafik
+        with st.spinner(f"Augementation von {filename} abgeschlossen...Starte Visualisierung"):
+            if filename not in st.session_state.fig_png:
+                ax_counter = sum(1 for opt in option_buttons if opt) + 1
+
+                fig, axs = plt.subplots(ax_counter, constants.AUG_COUNT + 1, figsize=(15, 6))
+
+
+                current_row = 0
+                # Punktwolke & Augmentierungen generieren
+                if show_point_cloud:
+                    create_point_cloud([info["original"]] + info["aug_images"], axs, current_row)
+                    current_row += 1
+
+                #Gray scal ebild generieren
+                if show_gray_scale:
+                    create_gray_images([info["original"]] + info["aug_images"], axs, current_row)
+                    current_row += 1
+                #main fig
+                create_main_plot([info["original"]] + info["aug_images"], axs, current_row)
+
+                png_buf = fig_to_png(fig)
+
+                fig.tight_layout()
+
+                st.session_state.fig_png[filename] = png_buf.getvalue()
+            
+
 
             
-        else:
-            if filename not in st.session_state.fig:
-                st.session_state.fig[filename] = cerate_simple_plot([info["original"]] + info["aug_images"])
-                png_buf = fig_to_png(st.session_state.fig[filename])
-                st.session_state.fig_png[filename] = png_buf.getvalue()
+      
 
         #Grafik anzeigen
         st.image(st.session_state.fig_png[filename])
