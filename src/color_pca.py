@@ -17,7 +17,9 @@ def _modify_eig_values(eig_values, alphas):
 
 
 # Aus dem Fancy-PCA-Paper bzw. Fancy-GNG-Paper
-def _fancy_pca_vectors(data, mean = constants.FANCY_PCA_MEAN, standard_deviation = constants.FANCY_PCA_STANDARD_DEVIATION):
+def _fancy_pca_vectors(data):
+    standard_deviation = constants.FANCY_PCA_STANDARD_DEVIATION
+    mean = constants.FANCY_PCA_MEAN
     mean_free_data = data - np.mean(data) # Subtrahiert den Mittelwert von den Daten (zentriert die Daten)
     data_covarianz = np.cov(mean_free_data, rowvar=False) # Berechnet die Kovarianzmatrix der Daten, rowvar=False -> Daten sind in Spalten gespeichert
     eig_values, eig_vecs = np.linalg.eigh(data_covarianz) # Berechnet die Eigenwerte und Eigenvektoren der Kovarianzmatrix, eigh -> Eigenwerte sind sortiert nach Größe
@@ -62,6 +64,7 @@ def _smooth_add_vecs(pixel_cluster_map, size_images, add_vecs, data_index):
     vector_field = vector_field.reshape((size_images[data_index][1], size_images[data_index][0], 3)) 
     
     if constants.USE_SMOOTH: # Überprüft, ob das Glätten aktiviert ist (True)
+        #print("Smooth")
         smoothed_vector_field = np.zeros_like(vector_field) # Erstellt ein Array mit der gleichen Form wie das Vektorfeld, aber mit Nullen gefüllt
 
         for i in range(3): # Schleife über die 3 Farbkanäle (RGB)

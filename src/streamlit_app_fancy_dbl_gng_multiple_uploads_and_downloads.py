@@ -17,6 +17,7 @@ import fancy_pca as FP
 FANCYGNG_STR = "FancyGNG"
 FANCYPCA_STR = "FancyPCA"
 COLORJITTER_STR = "Color-Jitter"
+MAX_UI_AUG_COUNT = 10
 
 
 #-----------------------------Session------------------------------------------------------------
@@ -134,25 +135,25 @@ if aug_option == COLORJITTER_STR:
 
 elif aug_option == FANCYGNG_STR:
     st.sidebar.subheader("🧮 Fancy GNG Parameter")
-    STANDARD_DEVIATION = st.sidebar.slider("Standard Abweichung", 1, 100, getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 20))
-    MEAN = st.sidebar.slider("Mittelwert", 2, 10, getattr(constants, "FANCY_PCA_MEAN", 3))  
-    SIGMA = st.sidebar.slider("Glätung/Sigma", 0, 8, getattr(constants, "SIGMA", 3))  
+    STANDARD_DEVIATION = st.sidebar.slider("Standard Abweichung", 1, 10, getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 20))
+    MEAN = st.sidebar.slider("Mittelwert", 0, 10, getattr(constants, "FANCY_PCA_MEAN", 3))  
+    USE_SMOOTH = st.sidebar.checkbox("Nutze Glättung", value=True)
     constants.FANCY_PCA_STANDARD_DEVIATION = STANDARD_DEVIATION
     constants.FANCY_PCA_MEAN = MEAN
-    constants.SIGMA = SIGMA
+    constants.USE_SMOOTH = USE_SMOOTH
     
 
 
 elif aug_option == FANCYPCA_STR:
     st.sidebar.subheader("🧮 Fancy PCA Parameter")
-    STANDARD_DEVIATION = st.sidebar.slider("Standard Abweichung", 1, 100, getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 20))
-    MEAN = st.sidebar.slider("Mittelwert", 2, 10, getattr(constants, "FANCY_PCA_MEAN", 3))  
+    STANDARD_DEVIATION = st.sidebar.slider("Standard Abweichung", 0, 10, getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 20))
+    MEAN = st.sidebar.slider("Mittelwert", 0, 10, getattr(constants, "FANCY_PCA_MEAN", 3))  
     constants.FANCY_PCA_STANDARD_DEVIATION = STANDARD_DEVIATION
     constants.FANCY_PCA_MEAN = MEAN
     
 constants.AUG_COUNT = AUG_COUNT
 
-print(constants.FANCY_PCA_STANDARD_DEVIATION, constants.FANCY_PCA_MEAN, constants.SIGMA)
+print(constants.FANCY_PCA_STANDARD_DEVIATION, constants.FANCY_PCA_MEAN, constants.USE_SMOOTH)
 #-----------------------------------FancyPCA------------------------------------------
 def fancy_pca(image_data, original_iamge):
     aug_images = generate_fancy_pca_augmentations(image_data)
