@@ -38,6 +38,8 @@ def init_session():
         st.session_state.last_aug = None
     if "last_aug_info" not in st.session_state:
         st.session_state.last_aug_info = None
+    if "gray_images" not in st.session_state:
+        st.session_state.gray_images = {}
 
 init_session()
 
@@ -48,6 +50,7 @@ def reset_session():
 def reset_for_new_run():
     st.session_state.image_results = {}
     st.session_state.fig_png = {}
+    st.session_state.gray_images = {}
 
 
 
@@ -100,7 +103,7 @@ elif input_option == "Kamera":
 show_point_cloud = st.checkbox("Zeige die Punktwolke")
 
 #Punktwolke anzeigen
-show_gray_scale = st.checkbox("Generiere zusätzlich eine gray scale Version")
+show_gray_scale = st.checkbox("Generiere zusätzlich eine Gray-Scale Version")
 
 option_buttons = []
 option_buttons.append(show_point_cloud)
@@ -316,16 +319,23 @@ def create_point_cloud(all_images, axs, row_idx = 0):
         
 
 def create_gray_images(all_images, axs, row_idx = 0):
-    images = all_images if len(all_images) < MAX_UI_AUG_COUNT else all_images[:MAX_UI_AUG_COUNT]
+    images = all_images if len(all_images) <= MAX_UI_AUG_COUNT else all_images[:MAX_UI_AUG_COUNT]
     grayscale_transform = transforms.Grayscale()
+    st.session_state.gray_images[filename] = {"images": []}
     for idx, img in enumerate(images):
         ax = get_fig_ax(axs, row_idx, idx)
         if len(ax.images) == 0 and len(ax.collections) == 0:
             gray = grayscale_transform(img)
+            if idx != 0:
+                st.session_state.gray_images[filename]["images"].append(gray)
             ax.imshow(gray, cmap="gray")
             ax.axis("off")
             #ax.set_title("Original" if idx == 0 else f"Gray Aug {idx}")
-
+    #Generate the remaining gray images
+    if len(all_images) > MAX_UI_AUG_COUNT:
+        for img in all_images[MAX_UI_AUG_COUNT:]:
+            gray = grayscale_transform(img)
+            st.session_state.gray_images[filename]["images"].append(gray)
 
 def create_main_plot(all_images, axs, row_idx = 0):
     images = all_images if len(all_images) < MAX_UI_AUG_COUNT else all_images[:MAX_UI_AUG_COUNT]
@@ -473,6 +483,23 @@ if st.session_state.image_results:
     )
 
     
+if st.session_state.image_results and filename in st.session_state.gray_images:
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zipf:
+        for filename, info in st.session_state.gray_images.items():
+            base_name = filename.rsplit('.', 1)[0]
+            for i, img in enumerate(info['images']):
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG")
+                zipf.writestr(f"{base_name}_gray_scale_{st.session_state.last_aug}_{i+1}.jpg", buf.getvalue())
 
+    download = st.download_button(
+        label="⬇️ Gray-Scale Bilder als ZIP herunterladen",
+        data=zip_buffer.getvalue(),
+        file_name="gray_scale_images.zip",
+        mime="application/zip",
+    )
+
+    
 
 
