@@ -108,7 +108,8 @@ show_point_cloud = st.checkbox("Zeige die Punktwolke")
 #gray scale anzeigen
 show_gray_scale = st.checkbox("Generiere zusätzlich eine Gray-Scale Version")
 
-#Pcluster
+show_cluster = False
+#cluster
 if aug_option == FANCYGNG_STR:
     show_cluster = st.checkbox("Genereiere eine Pixel Clustermap")
     option_buttons.append(show_cluster)
