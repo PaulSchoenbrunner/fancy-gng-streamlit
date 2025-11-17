@@ -56,3 +56,7 @@ def get_color(group):
     }
     return color_mapping[group]
     
+    
+    
+#TODO
+#Punktwolke auf 5000 einstellen, Anzahl Zentren von GNG anzeigen, Reduziertes Training von GNG 

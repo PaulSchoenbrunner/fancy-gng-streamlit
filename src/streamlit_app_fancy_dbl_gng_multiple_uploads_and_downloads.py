@@ -21,7 +21,7 @@ FANCYPCA_STR = "FancyPCA"
 COLORJITTER_STR = "Color-Jitter"
 MAX_UI_AUG_COUNT = 10
 MAX_UI_AUG_COUNT += 1
-CLOUD_SIZE = 20000
+CLOUD_SIZE = 5000
 
 
 #-----------------------------Session------------------------------------------------------------
@@ -111,7 +111,7 @@ show_gray_scale = st.checkbox("Generiere zusätzlich eine Gray-Scale Version")
 show_cluster = False
 #cluster
 if aug_option == FANCYGNG_STR:
-    show_cluster = st.checkbox("Genereiere eine Pixel Clustermap")
+    show_cluster = st.checkbox("Generiere eine Pixel Clustermap")
     option_buttons.append(show_cluster)
 
 option_buttons.append(show_point_cloud)
@@ -220,13 +220,14 @@ def show_fancy_pca_info(filename, info):
 
 #-------------------------------------FancyGNG---------------------------------------------
 def fancy_gng(image_data, original_image):
-    aug_images, cluster_count, pixel_cluster_map = generate_fancy_gng_augmentations(image_data)
+    aug_images, cluster_count, pixel_cluster_map, node_cluster_map = generate_fancy_gng_augmentations(image_data)
     st.session_state.image_results[filename] = {
                     "original": original_image,
                     "aug_images": aug_images,
                     "cluster_count": cluster_count,
                     "data_shape": image_data.shape,
-                    "pixel_cluster_map": pixel_cluster_map
+                    "pixel_cluster_map": pixel_cluster_map,
+                    "nodes": node_cluster_map.size
     }
 
 
@@ -236,6 +237,7 @@ def show_fancy_gng_info(filename, info):
     st.write(f"**Bildgröße:** {info['original'].size}")
     st.write(f"**Bildarray-Form:** {info['data_shape']}")
     st.write(f"**Anzahl der Cluster:** {info['cluster_count']}")
+    st.write(f"**Anzahl der von GNG generierten Zentren:** {info['nodes']}")
 
 
 def generate_fancy_gng_augmentations(image_data):
@@ -259,7 +261,9 @@ def generate_fancy_gng_augmentations(image_data):
 
     pixel_cluster_map, node_cluster_map = clustering.cluster(finalDistMap, finalNodes, connectiveMatrix)
     pixel_cluster_map = np.array(pixel_cluster_map)
+    print(node_cluster_map.size)
     cluster_count = int(max(node_cluster_map)) + 1
+
 
     aug_images = []
     for _ in range(constants.AUG_COUNT):
@@ -272,7 +276,7 @@ def generate_fancy_gng_augmentations(image_data):
         # Erstellen des augmentierten Bildes
         aug_image = Image.fromarray(aug_data)
         aug_images.append(aug_image)
-    return aug_images, cluster_count, pixel_cluster_map
+    return aug_images, cluster_count, pixel_cluster_map, node_cluster_map
 
 
 
