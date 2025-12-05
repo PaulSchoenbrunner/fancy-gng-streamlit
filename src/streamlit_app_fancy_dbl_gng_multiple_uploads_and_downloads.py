@@ -108,13 +108,13 @@ elif input_option == "Camera":
         st.session_state.last_picture = camera_image.getvalue()      
         
        
-option_buttons_ui = []     
-#Punktwolke anzeigen
-show_point_cloud = st.checkbox("Show the point cloud",
-                    help="This option generates a point cloud representation of each image's pixels in the G-B color space. " \
-                    "Each point represents one pixel of the image.The position of the points is based on the green and blue values (x=G, y=B). " \
-                    "The color of the points corresponds to the original color of the pixel (R,G,B). " \
-                    "The result is a 2D visual representation of the color distribution of an image.")
+option_buttons_ui = []  
+
+figures = st.checkbox("Generate visualization",
+                value = True,
+                help="Generate a quick view of the result. If false, the images are still available for download. No visualization is useful when larger data sets are to be augmented")
+
+
 
 #gray scale anzeigen
 show_gray_scale = st.checkbox("Additionally generate a grayscale version",
@@ -126,19 +126,28 @@ show_cluster = False
 reduced_fancy_gng = False
 #cluster
 if aug_option == FANCYGNG_STR:
-    show_cluster = st.checkbox("Generate a pixel cluster map",
-                    help="A unique color is selected for each color cluster (connected codebook vectors) found by GNG. " \
-                    "All pixels belonging to this cluster are colored in this color. This visualizes the color clusters found in the image.")
-    option_buttons_ui.append(show_cluster)
-    
     #Reduziertes Fancy-GNG
     reduced_fancy_gng = st.checkbox("Train Fancy-GNG on fewer data points",
                     help="At random (without repetition), select n pixels from the image to be used to train the GNG. " \
                     "This can be used to accelerate Fancy-GNG.")
     
+    if figures:
+        show_cluster = st.checkbox("Generate a pixel cluster map",
+                        help="A unique color is selected for each color cluster (connected codebook vectors) found by GNG. " \
+                        "All pixels belonging to this cluster are colored in this color. This visualizes the color clusters found in the image.")
+        option_buttons_ui.append(show_cluster)
+    
+#Punktwolke anzeigen
+show_point_cloud = False
+if figures:
+    show_point_cloud = st.checkbox("Show the point cloud",
+                        help="This option generates a point cloud representation of each image's pixels in the G-B color space. " \
+                        "Each point represents one pixel of the image.The position of the points is based on the green and blue values (x=G, y=B). " \
+                        "The color of the points corresponds to the original color of the pixel (R,G,B). " \
+                        "The result is a 2D visual representation of the color distribution of an image.")   
+    option_buttons_ui.append(show_point_cloud)
 
 
-option_buttons_ui.append(show_point_cloud)
 option_buttons_ui.append(show_gray_scale)
 
 
@@ -415,8 +424,9 @@ def create_gray_images(all_images, axs, row_idx = 0):
             gray = grayscale_transform(img)
             if idx != 0:
                 st.session_state.gray_images[filename]["images"].append(gray)
-            ax.imshow(gray, cmap="gray")
-            ax.axis("off")
+            if figures:
+                ax.imshow(gray, cmap="gray")
+                ax.axis("off")
             #ax.set_title("Original" if idx == 0 else f"Gray Aug {idx}")
     #Generate the remaining gray images
     if len(all_images) > MAX_UI_AUG_COUNT:
@@ -516,21 +526,22 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
 
                 
                 
-
+    
         # Info Anzeige
         info = st.session_state.image_results[filename]
-       
-        if filename not in st.session_state.fig_png:
-            if aug_option == FANCYGNG_STR:
-                st.session_state.last_aug_info = show_fancy_gng_info
-           
-            elif aug_option == FANCYPCA_STR:
-                st.session_state.last_aug_info = show_fancy_pca_info
 
-            elif aug_option == COLORJITTER_STR:
-                st.session_state.last_aug_info = show_color_jitter_info
+        if figures:
+            if filename not in st.session_state.fig_png:
+                if aug_option == FANCYGNG_STR:
+                    st.session_state.last_aug_info = show_fancy_gng_info
+           
+                elif aug_option == FANCYPCA_STR:
+                    st.session_state.last_aug_info = show_fancy_pca_info
+
+                elif aug_option == COLORJITTER_STR:
+                    st.session_state.last_aug_info = show_color_jitter_info
         
-        st.session_state.last_aug_info(filename, info)
+            st.session_state.last_aug_info(filename, info)
         
 
         #Grafik
@@ -543,7 +554,7 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
 
                 current_row = 0
                 # Punktwolke & Augmentierungen generieren
-                if show_point_cloud:
+                if show_point_cloud and figures:
                     create_point_cloud([info["original"]] + info["aug_images"], axs, current_row)
                     current_row += 1
 
@@ -552,25 +563,20 @@ if (start_augmentation or st.session_state.done) and st.session_state.uploaded_f
                     create_gray_images([info["original"]] + info["aug_images"], axs, current_row)
                     current_row += 1
 
-                if show_cluster:
+                if show_cluster and figures:
                     create_cluster_image([info["original"]] + info["aug_images"], axs, current_row)
                     current_row += 1
                 #main fig
-                create_main_plot([info["original"]] + info["aug_images"], axs, current_row)
-
-                png_buf = fig_to_png(fig)
-
-                fig.tight_layout()
-
-                st.session_state.fig_png[filename] = png_buf.getvalue()
+                if figures:
+                    create_main_plot([info["original"]] + info["aug_images"], axs, current_row)
+                    png_buf = fig_to_png(fig)
+                    fig.tight_layout()
+                    st.session_state.fig_png[filename] = png_buf.getvalue()
+                    
             
-
-
-            
-      
-
-        #Grafik anzeigen
-        st.image(st.session_state.fig_png[filename])
+            #Grafik anzeigen
+        if figures:
+            st.image(st.session_state.fig_png[filename])
     st.session_state.done = True
         
 
