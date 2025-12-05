@@ -16,8 +16,8 @@ import random
 
 
 #----------------------------UI Constants-------------------------------------------------------
-FANCYGNG_STR = "FancyGNG"
-FANCYPCA_STR = "FancyPCA"
+FANCYGNG_STR = "Fancy-GNG"
+FANCYPCA_STR = "Fancy-PCA"
 COLORJITTER_STR = "Color-Jitter"
 MAX_UI_AUG_COUNT = 10
 MAX_UI_AUG_COUNT += 1
@@ -59,7 +59,7 @@ def reset_for_new_run():
 
 
 #--------------------------Streamlit UI-------------------------------
-st.title("🧠 DBL-GNG Image augmentation")
+st.title("🧠 Fancy-GNG image augmentation")
 st.write("Upload one or more images or take one with your camera.")
 
 
@@ -68,14 +68,15 @@ aug_option = st.selectbox(
     "Select the augmentation methode:",
     [FANCYGNG_STR, FANCYPCA_STR, COLORJITTER_STR],
     index=0,
-    help="Dies ist ein Tooltip, der beim Hover angezeigt wird."
+    help="Select the augmentation method for generating the images."
 )
 st.write(f"Method chosen: {aug_option}")
 
 
 # Quelle wählen
 input_option = st.radio("Select image source:", ["File upload", "Camera"],
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="Select the source of the images to be used for augmentation. " \
+                "When selecting the camera, only one image can be captured. When selecting file upload, multiple images can be selected.")
 
 if input_option == "File upload":
     uploaded_files = st.file_uploader(
@@ -83,7 +84,7 @@ if input_option == "File upload":
         type=["jpg", "jpeg", "png"], 
         accept_multiple_files=True,
         on_change= reset_session,
-        help="Dies ist ein Tooltip, der beim Hover angezeigt wird."
+        help="Multiple images are accepted. The supported types are: jpg, jpeg and png"
     )
 
     if uploaded_files:
@@ -91,7 +92,7 @@ if input_option == "File upload":
 
 elif input_option == "Camera":
     camera_image = st.camera_input("Take a picture",
-    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+    help="A webcam is required to take a picture.")
 
     if camera_image is not None:
 
@@ -110,11 +111,15 @@ elif input_option == "Camera":
 option_buttons_ui = []     
 #Punktwolke anzeigen
 show_point_cloud = st.checkbox("Show the point cloud",
-                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                    help="This option generates a point cloud representation of each image's pixels in the G-B color space. " \
+                    "Each point represents one pixel of the image.The position of the points is based on the green and blue values (x=G, y=B). " \
+                    "The color of the points corresponds to the original color of the pixel (R,G,B). " \
+                    "The result is a 2D visual representation of the color distribution of an image.")
 
 #gray scale anzeigen
 show_gray_scale = st.checkbox("Additionally generate a grayscale version",
-                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                    help="Additionally a grayscale version of the augmented image is generated. These images can also be downloaded at the end.")
+
 
 
 show_cluster = False
@@ -122,12 +127,14 @@ reduced_fancy_gng = False
 #cluster
 if aug_option == FANCYGNG_STR:
     show_cluster = st.checkbox("Generate a pixel cluster map",
-                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                    help="A unique color is selected for each color cluster (connected codebook vectors) found by GNG. " \
+                    "All pixels belonging to this cluster are colored in this color. This visualizes the color clusters found in the image.")
     option_buttons_ui.append(show_cluster)
     
     #Reduziertes Fancy-GNG
     reduced_fancy_gng = st.checkbox("Train Fancy-GNG on fewer data points",
-                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                    help="At random (without repetition), select n pixels from the image to be used to train the GNG. " \
+                    "This can be used to accelerate Fancy-GNG.")
     
 
 
@@ -143,25 +150,25 @@ if start_augmentation and st.session_state.done:
 
 #----------------------------Sidebar für Parameter---------------------------------
 st.sidebar.header("⚙️ Parameter settings",
-                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                    help="Change parameters of the selected augmentation method")
 
 # Allgemeine Parameter (für alle Methoden)
 st.sidebar.subheader("General")
 AUG_COUNT = 5
 AUG_COUNT = st.sidebar.number_input("Number of augmentations", min_value=1, max_value=100,  value=getattr(constants, "AUG_COUNT", 3),
-                                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                                    help="The number of augmentations generated per image")
 
 # Dynamische Sektionen je nach ausgewählter Methode
 if aug_option == COLORJITTER_STR:
     st.sidebar.subheader("🧮 Color-Jitter parameter")
     BRIGHTNESS = st.sidebar.slider("Brightness", 0.0, 2.0, getattr(constants, "BRIGHTNESS", 0.5),
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="Varies the image brightness. Values above 1 make the image brighter, values below 1 make it darker.")
     CONTRAST = st.sidebar.slider("Contrast", 0.0, 2.0, getattr(constants, "CONTRAST", 0.5),
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="Changes the contrast of the image. Higher values increase the difference between light and dark.")
     SATURATION = st.sidebar.slider("Saturation", 0.0, 2.0, getattr(constants, "SATURATION", 0.5),
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="Changes the color saturation. Low values desaturate the image, high values intensify the colors.")
     HUE = st.sidebar.slider("Hue", 0.0, 0.5, getattr(constants, "HUE", 0.1),
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="Shifts the color tone of the image. Small values result in subtle color shifts.")
 
     # Werte übernehmen
     constants.BRIGHTNESS = BRIGHTNESS
@@ -173,10 +180,12 @@ if aug_option == COLORJITTER_STR:
 
 elif aug_option == FANCYGNG_STR:
     st.sidebar.subheader("🧮 Fancy-GNG parameter")
-    STANDARD_DEVIATION = st.sidebar.slider("Standard deviation", 1, 10, getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 20),
-                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
-    MEAN = st.sidebar.slider("Mean", 0, 10, getattr(constants, "FANCY_PCA_MEAN", 3),
-                    help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")  
+    STANDARD_DEVIATION = st.sidebar.slider("Standard deviation", 1.0, 10.0,  float(getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 2.0)),
+                    step=0.25,
+                    help="Determines the strength of the color shift along the PCA components. Higher values produce stronger color variations.")
+    MEAN = st.sidebar.slider("Mean", 0.0, 10.0,  float(getattr(constants, "FANCY_PCA_MEAN", 3.0)),
+                    step=0.25,
+                    help="Sets the average shift along the color PCA. Affects how much colors are changed on average.")  
     #USE_SMOOTH = st.sidebar.checkbox("Use smoothing", value=False)
     #if USE_SMOOTH:
     #    SIGMA = st.sidebar.slider("Smoothing/Sigma", 0, 10, getattr(constants, "SIGMA", 3))
@@ -191,24 +200,30 @@ elif aug_option == FANCYGNG_STR:
 
 elif aug_option == FANCYPCA_STR:
     st.sidebar.subheader("🧮 Fancy-PCA parameter")
-    STANDARD_DEVIATION = st.sidebar.slider("Standard deviation", 0, 10, getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 20),
-                        help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
-    MEAN = st.sidebar.slider("Mean", 0, 10, getattr(constants, "FANCY_PCA_MEAN", 3),
-                        help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")  
+    STANDARD_DEVIATION = st.sidebar.slider("Standard deviation", 0.0, 10.0,  float(getattr(constants, "FANCY_PCA_STANDARD_DEVIATION", 2.0)),
+                        step=0.25,
+                        help="Determines the strength of the color shift along the PCA components. Higher values produce stronger color variations.")
+    MEAN = st.sidebar.slider("Mean", 0.0, 10.0,  float(getattr(constants, "FANCY_PCA_MEAN", 3.0)),
+                        step=0.25,
+                        help="Sets the average shift along the color PCA. Affects how much colors are changed on average.")  
     constants.FANCY_PCA_STANDARD_DEVIATION = STANDARD_DEVIATION
     constants.FANCY_PCA_MEAN = MEAN
 
 if show_point_cloud:
     st.sidebar.subheader("☁️ Size of the point cloud")
     CLOUD_SIZE = st.sidebar.number_input("Number of points", 100, 1000000, CLOUD_SIZE,
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="By default, 5000 random pixels from the image are selected for displaying the point cloud. " \
+                "This helps to generate the point cloud faster and save computing power. " \
+                "However, any other number smaller than the total number of pixels can also be selected. ")
     use_original_size = st.sidebar.checkbox("Use original image size",
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="Use all pixels of the image to generate the point cloud. This may take some time for larger images.")
     
 if reduced_fancy_gng and aug_option == FANCYGNG_STR:
     st.sidebar.subheader("Number of pixels used for Fancy-GNG training")
     REDUCED_TRAINING = st.sidebar.number_input("Number of pixels", 100, 1000000, REDUCED_TRAINING,
-                help="Dies ist ein Tooltip, der beim Hover angezeigt wird.")
+                help="By default, the reduced GNG training uses 5000 random pixels from the image. " \
+                "This helps to train GNG faster and save computing power. " \
+                "However, any other number that is smaller than the total number of pixels can also be selected. ")
     
 
 constants.AUG_COUNT = AUG_COUNT
@@ -304,6 +319,7 @@ def generate_fancy_gng_augmentations(image_data):
 
     pixel_cluster_map, node_cluster_map = clustering.cluster(finalDistMap, finalNodes, connectiveMatrix)
     pixel_cluster_map = np.array(pixel_cluster_map)
+    print(node_cluster_map.size)
     cluster_count = int(max(node_cluster_map)) + 1
 
 
