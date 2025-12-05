@@ -1,3 +1,4 @@
+import colorsys
 #Hyperparameter die können auf die Bildgrößen/arten optimiert werden
 
 #GNG
@@ -40,7 +41,7 @@ SATURATION = 0.4
 HUE = 0.1
 
 
-def get_color(group):
+'''def get_color(group):
     color_mapping = {
         0: (255, 0, 0),       # Rot
         1: (0, 255, 0),       # Grün
@@ -54,9 +55,15 @@ def get_color(group):
         9: (128, 128, 0),     # Dunkelgelb
         10: (128, 0, 128),    # Dunkelmagenta
     }
-    return color_mapping[group]
+    return color_mapping[group]'''
+
+def get_color(group):
+    
+
+    golden_ratio_conjugate = 0.618033988749895
+    hue = (group * golden_ratio_conjugate) % 1.0
+    r, g, b = colorsys.hsv_to_rgb(hue, 0.8, 1.0)
+    return int(r * 255), int(g * 255), int(b * 255)
+
     
     
-    
-#TODO
-#Punktwolke auf 5000 einstellen, Anzahl Zentren von GNG anzeigen, Reduziertes Training von GNG 
