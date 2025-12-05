@@ -41,7 +41,7 @@ def _fancy_pca_vectors(data):
     
 def modify_clusters(data, pixel_cluster_map, cluster_count, size_images, data_index):
     data_modify = data.copy() # Kopiert die Eingabedaten, um sie zu ändern, ohne das Original zu verändern
-    print("Debug2:", data.shape)
+    #print("Debug2:", data.shape)
     #print(data_modify.shape)
     add_vecs = list() # Initialisiert eine leere Liste für die Vektoren, die für die Farbänderung verwendet werden
     #print(cluster_count)
@@ -65,7 +65,7 @@ def _smooth_add_vecs(pixel_cluster_map, size_images, add_vecs, data_index):
     vector_field = vector_field.reshape((size_images[data_index][1], size_images[data_index][0], 3)) 
     
     if constants.USE_SMOOTH: # Überprüft, ob das Glätten aktiviert ist (True)
-        #print("Smooth")
+        print("Smooth")
         smoothed_vector_field = np.zeros_like(vector_field) # Erstellt ein Array mit der gleichen Form wie das Vektorfeld, aber mit Nullen gefüllt
 
         for i in range(3): # Schleife über die 3 Farbkanäle (RGB)

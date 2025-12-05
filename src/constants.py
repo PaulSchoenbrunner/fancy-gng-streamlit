@@ -11,7 +11,7 @@ SARTING_NODES = 3 ### Schreibfehler: STARTING_NODES ### -> überprüfe auch in a
 #Anzahl der Maximalen Nodes
 MAX_NODES = 20
 #Gaussglättung verwenden
-USE_SMOOTH = True
+USE_SMOOTH = False
 
 #Data
 #MAX RGB-Value
