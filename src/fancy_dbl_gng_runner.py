@@ -28,7 +28,7 @@ for data_index in range(len(file_list)):
    
     
     gng = dbl_gng.DBL_GNG(3, constants.MAX_NODES) # Create a DBL_GNG object with 3 dimensions and MAX_NODES from constants.py
-    gng.initializeDistributedNode(data[data_index], constants.SARTING_NODES) # Initialize distributed nodes with current data, note typo: STARTING_NODES
+    gng.initializeDistributedNode(data[data_index], constants.STARTING_NODES) # Initialize distributed nodes with current data, note typo: STARTING_NODES
 
     # Run training epochs
     bar = trange(epoch) # Progress bar for epochs

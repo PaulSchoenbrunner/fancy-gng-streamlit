@@ -305,7 +305,7 @@ def generate_fancy_gng_augmentations(image_data):
         indices = np.random.choice(len(image_data), REDUCED_TRAINING, replace=False)
         image_data = image_data[indices]
         
-    gng.initializeDistributedNode(image_data, constants.SARTING_NODES)
+    gng.initializeDistributedNode(image_data, constants.STARTING_NODES)
     bar = trange(constants.EPOCH)
     for i in bar:
         gng.resetBatch()
