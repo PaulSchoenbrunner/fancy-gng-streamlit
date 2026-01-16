@@ -127,6 +127,7 @@ show_gray_scale = st.checkbox("Additionally generate a grayscale version",
 
 show_cluster = False
 reduced_fancy_gng = False
+show_cluster_cloud = False
 #cluster
 if aug_option == FANCYGNG_STR:
     #reduce fancy-GNG
@@ -138,6 +139,13 @@ if aug_option == FANCYGNG_STR:
         show_cluster = st.checkbox("Generate a pixel cluster map",
                         help="A unique color is selected for each color cluster (connected codebook vectors) found by GNG. " \
                         "All pixels belonging to this cluster are colored in this color. This visualizes the color clusters found in the image.")
+        
+        show_cluster_cloud = st.checkbox("Show the cluster cloud",
+                        help="This option generates a point cloud representation of each image's pixels in the G-B color space. " \
+                        "Each point represents one pixel of the image. The position of the points is based on the green and blue values (x=G, y=B). " \
+                        "Every point is colored in their corresponding cluster group color. " \
+                        "The result is a 2D visual representation of the color distribution of an image.")   
+        option_buttons_ui.append(show_cluster_cloud)
  
     
 #Show point cloud
@@ -150,15 +158,6 @@ if figures:
                         "The result is a 2D visual representation of the color distribution of an image.")   
     option_buttons_ui.append(show_point_cloud)
 
-
-show_cluster_cloud = False
-if figures:
-    show_cluster_cloud = st.checkbox("Show the cluster cloud",
-                        help="This option generates a point cloud representation of each image's pixels in the G-B color space. " \
-                        "Each point represents one pixel of the image. The position of the points is based on the green and blue values (x=G, y=B). " \
-                        "Every point is colored in their corresponding cluster group color. " \
-                        "The result is a 2D visual representation of the color distribution of an image.")   
-    option_buttons_ui.append(show_cluster_cloud)
 
 
 
